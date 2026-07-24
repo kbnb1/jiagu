@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 应用内部缓存根目录（上传缓存 /cache/upload/） -->
+    <cache-path name="cache" path="." />
+    <cache-path name="upload_cache" path="upload/" />
+
+    <!-- 应用专属外部存储目录（下载加固产物） -->
+    <external-files-path name="external_files" path="." />
+    <external-cache-path name="external_cache" path="." />
+
+    <!-- 外部存储公共下载目录（兼容旧版将产物保存到 Download） -->
+    <external-path name="downloads" path="Download/" />
+
+    <!-- 应用内部文件目录 -->
+    <files-path name="files" path="." />
+</paths>

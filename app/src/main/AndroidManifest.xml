@@ -9,6 +9,12 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- 写入外部存储：仅在 Android 9 及以下需要保存下载产物到公共目录 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!-- 震动反馈（任务完成 / 失败提示） -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:name=".HardeningApp"
@@ -19,14 +25,20 @@
         android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
         android:usesCleartextTraffic="false">
 
+        <!-- 启动页：唯一 LAUNCHER 入口 -->
         <activity
-            android:name=".ui.LoginActivity"
-            android:exported="true">
+            android:name=".ui.SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="false" />
 
         <activity
             android:name=".ui.RegisterActivity"
@@ -36,7 +48,37 @@
             android:name=".ui.MainActivity"
             android:exported="false" />
 
-        <!-- 文件上传模块将在此补充 FileProvider（@xml/file_paths） -->
+        <activity
+            android:name=".ui.GuideActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.HistoryActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.PlanActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.ProfileActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.AboutActivity"
+            android:exported="false" />
+
+        <!-- FileProvider：用于分享 / 打开加固产物文件 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>

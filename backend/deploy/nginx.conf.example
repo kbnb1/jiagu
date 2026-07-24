@@ -1,0 +1,131 @@
+# +----------------------------------------------------------------------
+# | 代码加固平台 Nginx 配置示例
+# | 使用前请替换: 域名 / SSL证书路径 / 项目路径 / PHP-FPM路径
+# +----------------------------------------------------------------------
+
+# HTTP -> HTTPS 重定向
+server {
+    listen 80;
+    listen [::]:80;
+    server_name hardening.example.com;
+
+    # 健康检查允许 HTTP(便于负载均衡探活)
+    location = /api/health/ping {
+        proxy_pass http://127.0.0.1:9000;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root/index.php;
+        include fastcgi_params;
+        access_log off;
+    }
+
+    # 其余请求重定向到 HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS 主服务
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name hardening.example.com;
+
+    # ---- SSL 证书 ----
+    ssl_certificate     /etc/letsencrypt/live/hardening.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/hardening.example.com/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    # ---- 项目根目录 ----
+    root /data/www/hardening/backend/public;
+    index index.php index.html;
+
+    # ---- 上传文件大小限制(10MB业务 + 余量) ----
+    client_max_body_size 12m;
+    client_body_buffer_size 128k;
+
+    # ---- 安全响应头 ----
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # ---- 隐藏敏感文件 ----
+    location ~ /\.(env|git|htaccess|svn) {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # ---- 上传目录禁止执行 PHP ----
+    location ~* ^/uploads/.*\.(php|php5|phtml|sh|pl|py)$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # ---- 静态文件缓存 ----
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$ {
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+        access_log off;
+        try_files $uri =404;
+    }
+
+    # ---- favicon ----
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+
+    # ---- ThinkPHP 路由: 优先静态文件,否则交给 index.php ----
+    location / {
+        if (!-e $request_filename) {
+            rewrite ^(.*)$ /index.php?s=/$1 last;
+            break;
+        }
+    }
+
+    # ---- PHP-FPM 代理 ----
+    location ~ \.php$ {
+        # 防止通过上传目录执行 PHP
+        if ($request_uri ~* ^/uploads/) {
+            return 403;
+        }
+
+        fastcgi_pass   unix:/run/php/php8.2-fpm.sock;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        fastcgi_param  PATH_INFO        $fastcgi_path_info;
+        fastcgi_param  HTTPS            on;
+
+        include        fastcgi_params;
+
+        # 超时设置(加固任务可能较慢)
+        fastcgi_connect_timeout 30s;
+        fastcgi_send_timeout    300s;
+        fastcgi_read_timeout    300s;
+
+        # 缓冲设置
+        fastcgi_buffer_size    128k;
+        fastcgi_buffers        4 256k;
+        fastcgi_busy_buffers_size 256k;
+    }
+
+    # ---- 访问日志 ----
+    access_log /var/log/nginx/hardening.access.log main;
+    error_log  /var/log/nginx/hardening.error.log warn;
+
+    # ---- gzip 压缩 ----
+    gzip on;
+    gzip_min_length 1k;
+    gzip_comp_level 4;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+    gzip_vary on;
+    gzip_disable "msie6";
+}
