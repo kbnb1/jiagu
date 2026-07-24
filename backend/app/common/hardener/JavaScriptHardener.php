@@ -305,14 +305,12 @@ class JavaScriptHardener extends AbstractHardener
             . 'o=o%' . $count . ';'
             . 'if(o<0){o+=' . $count . ';}'
             . 'var n=' . $permVar . '[o];'
-            . 'var mk="' . $this->embedMaskedKey() . '";'
-            . 'var xm="' . $this->embedXorMask() . '";'
-            . 'var k="";'
-            . 'for(var j=0;j<mk.length;j+=2){'
-            . 'k+=String.fromCharCode(parseInt(mk.substr(j,2),16)^xm.charCodeAt((j/2)%xm.length));'
-            . '}'
+            . 'var khx="' . $this->embedMaskedKey() . '";'
+            . 'var xmx="' . $this->embedXorMask() . '";'
             . 'var kh="";'
-            . 'for(var j=0;j<k.length;j++){kh+=("00"+k.charCodeAt(j).toString(16)).slice(-2);}'
+            . 'for(var j=0;j<khx.length;j+=2){'
+            . 'kh+=String.fromCharCode(parseInt(khx.substr(j,2),16)^xmx.charCodeAt((j/2)%xmx.length));'
+            . '}'
             . 'var raw=' . $this->arrayVarName . '[n];'
             . 'return ' . $this->buildJsDecryptCall() . ';'
             . '}';
@@ -320,7 +318,13 @@ class JavaScriptHardener extends AbstractHardener
 
     private function buildJsDecryptCall(): string
     {
-        // 使用 Web Crypto 风格的同步解密（实际中需要异步，这里用 node 风格 createDecipheriv 兜底）
+        // kh 是 32 字节 AES 密钥（每个 char 持有 1 个字节, 由上方 XOR 循环生成），
+        // PHP 端预计算 SHA-256(encryptionKey::seedPrefix) 后嵌入,
+        // 与加密端 AES-256-CBC 保持一致.
+        // - Node.js: Buffer.from(kh, "binary") 取每个 char 的低 8 位作为字节, 还原 32 字节密钥.
+        //   (注意: 不能用 "hex", 因为 kh 不是 hex 字符串而是 32 个原始字节 char)
+        // - 浏览器: Web Crypto API 异步无法同步返回; encryptStrings 替换的是同步调用 getter(N),
+        //   浏览器侧维持空串回退以避免抛错. 失败时统一返回空串.
         return '(function(){'
             . 'try{'
             . 'if(typeof require!=="undefined"){'
@@ -328,18 +332,20 @@ class JavaScriptHardener extends AbstractHardener
             . 'var p=Buffer.from(raw,"base64");'
             . 'var iv=p.slice(0,16);'
             . 'var c=p.slice(16);'
-            . 'var d=crypto.createDecipheriv("aes-256-cbc",Buffer.from(kh,"hex"),iv);'
+            . 'var d=crypto.createDecipheriv("aes-256-cbc",Buffer.from(kh,"binary"),iv);'
             . 'return Buffer.concat([d.update(c),d.final()]).toString("utf8");'
             . '}else{'
-            . 'return atob(raw);'
+            . 'return "";'
             . '}'
-            . '}catch(e){return raw;}'
+            . '}catch(e){return "";}'
             . '})()';
     }
 
     private function embedMaskedKey(): string
     {
-        $rawKey = $this->encryptionKey . '::' . $this->seedPrefix;
+        // 嵌入 AES-256 密钥（即 PHP 加密时使用的 SHA-256 哈希的 hex 形式），
+        // 避免 JS 端需要再算一次 SHA-256（浏览器侧无同步 SHA-256 实现，且与加密端语义保持一致）。
+        $rawKey = hash('sha256', $this->encryptionKey . '::' . $this->seedPrefix, true); // 32 bytes
         $xorMask = $this->randomHex(16);
         $masked = '';
         for ($i = 0, $n = strlen($rawKey); $i < $n; $i++) {

@@ -442,4 +442,65 @@ class JwtService
     {
         return $this->refreshTtl;
     }
+
+    /* ---------------------------------------------------------------------
+     * 静态门面：方便在控制器/中间件无注入场景下直接调用。
+     * 使用进程级单例，配置从 jwt.* 读取；首次调用时懒加载。
+     * ------------------------------------------------------------------- */
+
+    /** @var JwtService|null 进程级单例 */
+    private static ?JwtService $shared = null;
+
+    /**
+     * 获取（或懒加载）共享实例。
+     */
+    public static function shared(): JwtService
+    {
+        if (self::$shared === null) {
+            self::$shared = new self();
+        }
+        return self::$shared;
+    }
+
+    /**
+     * 注入共享实例（用于测试或外部装配）。
+     */
+    public static function setShared(JwtService $svc): void
+    {
+        self::$shared = $svc;
+    }
+
+    /**
+     * 静态门面：生成 access_token。
+     *
+     * @param array $claims
+     * @return string
+     */
+    public static function makeAccessToken(array $claims): string
+    {
+        return self::shared()->generateAccessToken($claims);
+    }
+
+    /**
+     * 静态门面：生成 refresh_token。
+     *
+     * @param array $claims
+     * @return string
+     */
+    public static function makeRefreshToken(array $claims): string
+    {
+        return self::shared()->generateRefreshToken($claims);
+    }
+
+    /**
+     * 静态门面：解析 token（不校验签名）。
+     * 仅用于日志/调试/refresh 场景的快速读取，鉴权请使用 verify()。
+     *
+     * @param string $token
+     * @return array|null
+     */
+    public static function parse(string $token): ?array
+    {
+        return self::shared()->decode($token);
+    }
 }

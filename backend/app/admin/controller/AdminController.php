@@ -358,6 +358,8 @@ class AdminController extends BaseController
 
     /**
      * 校验管理员权限
+     * 安全说明: 严禁信任客户端 Header 中的管理员标识,
+     * 任何已登录用户都可以伪造 X-Is-Admin, 必须从数据库校验。
      */
     private function checkAdmin(): void
     {
@@ -366,13 +368,10 @@ class AdminController extends BaseController
             $this->json(401, '请先登录', null, 401)->send();
             exit;
         }
-        $isAdmin = (int) ($this->request->header('X-Is-Admin') ?? 0);
-        if ($isAdmin !== 1) {
-            $user = User::find($uid);
-            if (!$user || !$user->isAdmin()) {
-                $this->json(403, '无管理员权限', null, 403)->send();
-                exit;
-            }
+        $user = User::find($uid);
+        if (!$user || !$user->isAdmin()) {
+            $this->json(403, '无管理员权限', null, 403)->send();
+            exit;
         }
     }
 
