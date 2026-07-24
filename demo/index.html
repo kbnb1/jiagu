@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>代码加固平台 - Code Hardening Platform</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg-soft: #12121a;
+    --bg-card: #16161f;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --text-dim: #8888a0;
+    --accent: #6366f1;
+    --accent-2: #8b5cf6;
+    --accent-3: #06b6d4;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 24px;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 70% 60%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 50% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 50%);
+    animation: bgShift 20s ease-in-out infinite alternate;
+  }
+
+  @keyframes bgShift {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(-2%, -2%) rotate(1deg); }
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    padding: 8px 20px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 999px;
+    backdrop-filter: blur(10px);
+    animation: fadeInDown 0.8s ease-out;
+  }
+
+  .brand-icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  .brand-text {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+  }
+
+  h1 {
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, #fff 0%, #a5b4fc 50%, #67e8f9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fadeInUp 0.8s ease-out 0.1s both;
+  }
+
+  .hero-sub {
+    font-size: clamp(16px, 2vw, 20px);
+    color: var(--text-dim);
+    max-width: 600px;
+    margin: 0 auto 40px;
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    animation: fadeInUp 0.8s ease-out 0.3s both;
+  }
+
+  .btn {
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-card);
+    border-color: var(--accent);
+  }
+
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: bounce 2s infinite;
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(10px); }
+  }
+
+  .section {
+    padding: 120px 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+
+  .section-title {
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 700;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+
+  .section-desc {
+    font-size: 18px;
+    color: var(--text-dim);
+    max-width: 600px;
+    margin-bottom: 60px;
+  }
+
+  .demo-section {
+    background: var(--bg-soft);
+    padding: 120px 24px;
+  }
+
+  .demo-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .demo-header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .language-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .lang-tab {
+    padding: 10px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .lang-tab:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .lang-tab.active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .options-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .option-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .option-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .option-item label {
+    font-size: 14px;
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+
+  .code-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  @media (max-width: 900px) {
+    .code-comparison {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .code-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .code-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-title .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .dot.source { background: var(--warning); }
+  .dot.hardened { background: var(--success); }
+
+  .stats-badge {
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    font-weight: 500;
+  }
+
+  .code-area {
+    padding: 20px;
+    font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Mono", monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-x: auto;
+    max-height: 500px;
+    overflow-y: auto;
+    text-align: left;
+  }
+
+  .code-area pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .kw { color: #c678dd; }
+  .fn { color: #61afef; }
+  .str { color: #98c379; }
+  .num { color: #d19a66; }
+  .cmt { color: #5c6370; font-style: italic; }
+  .var { color: #e06c75; }
+  .op { color: #56b6c2; }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+  }
+
+  .feature-card {
+    padding: 32px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+  }
+
+  .feature-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .feature-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+  }
+
+  .feature-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .feature-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .languages-section {
+    background: var(--bg-soft);
+    padding: 120px 24px;
+  }
+
+  .languages-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .lang-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+
+  .lang-card {
+    padding: 32px 24px;
+    text-align: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+  }
+
+  .lang-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .lang-logo {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .lang-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .lang-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .pricing-section {
+    padding: 120px 24px;
+  }
+
+  .pricing-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .pricing-header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .price-card {
+    padding: 40px 32px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .price-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+  }
+
+  .price-card.featured {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, var(--bg-card) 100%);
+    transform: scale(1.02);
+  }
+
+  .price-badge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 20px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+  }
+
+  .plan-name {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .plan-price {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .plan-price span {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--text-dim);
+  }
+
+  .plan-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 32px;
+  }
+
+  .plan-features {
+    list-style: none;
+    margin-bottom: 32px;
+    flex-grow: 1;
+  }
+
+  .plan-features li {
+    padding: 8px 0;
+    font-size: 14px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .plan-features li::before {
+    content: '✓';
+    color: var(--success);
+    font-weight: bold;
+  }
+
+  .plan-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .plan-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .price-card.featured .plan-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: none;
+    color: white;
+  }
+
+  .footer {
+    padding: 60px 24px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .footer-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .footer-links a:hover {
+    color: var(--accent);
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-dim);
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="brand">
+      <div class="brand-icon">🛡</div>
+      <span class="brand-text">CODE HARDENING PLATFORM</span>
+    </div>
+    <h1>让你的代码<br/>坚不可摧</h1>
+    <p class="hero-sub">企业级代码加密混淆 SaaS 平台，支持 PHP / Java / JavaScript / Python / C++ 多语言源码加固，全方位保护你的知识产权。</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary" onclick="scrollToDemo()">立即体验 →</button>
+      <button class="btn btn-secondary" onclick="scrollToFeatures()">了解更多</button>
+    </div>
+  </div>
+  <div class="scroll-indicator">SCROLL DOWN ↓</div>
+</section>
+
+<section class="demo-section" id="demo">
+  <div class="demo-container">
+    <div class="demo-header">
+      <div class="section-label">LIVE DEMO</div>
+      <h2 class="section-title">实时加固演示</h2>
+      <p class="section-desc" style="margin: 0 auto;">选择语言，勾选加固选项，即刻查看加密混淆效果。</p>
+    </div>
+
+    <div class="language-tabs">
+      <button class="lang-tab active" onclick="setLanguage('javascript')">JavaScript</button>
+      <button class="lang-tab" onclick="setLanguage('python')">Python</button>
+      <button class="lang-tab" onclick="setLanguage('php')">PHP</button>
+      <button class="lang-tab" onclick="setLanguage('java')">Java</button>
+      <button class="lang-tab" onclick="setLanguage('cpp')">C++</button>
+    </div>
+
+    <div class="options-row">
+      <div class="option-item">
+        <input type="checkbox" id="opt-obfuscate" checked onchange="harden()">
+        <label for="opt-obfuscate">标识符混淆</label>
+      </div>
+      <div class="option-item">
+        <input type="checkbox" id="opt-encrypt" checked onchange="harden()">
+        <label for="opt-encrypt">字符串加密</label>
+      </div>
+      <div class="option-item">
+        <input type="checkbox" id="opt-comments" checked onchange="harden()">
+        <label for="opt-comments">清除注释</label>
+      </div>
+      <div class="option-item">
+        <input type="checkbox" id="opt-control" checked onchange="harden()">
+        <label for="opt-control">控制流平坦化</label>
+      </div>
+    </div>
+
+    <div class="code-comparison">
+      <div class="code-panel">
+        <div class="code-panel-header">
+          <div class="panel-title">
+            <span class="dot source"></span>
+            原始代码
+          </div>
+          <span id="source-stats" class="stats-badge">0 字符</span>
+        </div>
+        <div class="code-area">
+          <pre id="source-code"></pre>
+        </div>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-header">
+          <div class="panel-title">
+            <span class="dot hardened"></span>
+            加固后代码
+          </div>
+          <span id="hardened-stats" class="stats-badge">混淆率 0%</span>
+        </div>
+        <div class="code-area">
+          <pre id="hardened-code"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <div class="section-label">FEATURES</div>
+  <h2 class="section-title">全方位代码保护</h2>
+  <p class="section-desc">从变量混淆到字符串加密，从控制流平坦化到反调试检测，多层防护让逆向工程难上加难。</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🔤</div>
+      <div class="feature-title">标识符混淆</div>
+      <div class="feature-desc">变量名、函数名、类名全部替换为无意义的随机字符，映射表确保一致性，完全消除语义信息。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔐</div>
+      <div class="feature-title">字符串加密</div>
+      <div class="feature-desc">AES-256-CBC 加密所有字符串字面量，运行时动态解密，密钥混淆嵌入，防止静态分析提取敏感信息。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔀</div>
+      <div class="feature-title">控制流平坦化</div>
+      <div class="feature-desc">插入垃圾分支与分发器，将线性代码流拆分为状态机跳转，极大增加逆向分析的复杂度。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🕵️</div>
+      <div class="feature-title">反调试检测</div>
+      <div class="feature-desc">检测 xdebug、phpspy、debugger 等调试工具，检测到即终止运行，保护代码不被动态分析。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧹</div>
+      <div class="feature-title">注释清除</div>
+      <div class="feature-desc">自动移除所有注释与调试信息，保留 license 头，同时压缩空白字符，减小文件体积。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💥</div>
+      <div class="feature-title">死代码注入</div>
+      <div class="feature-desc">插入无意义的垃圾代码块，增加噪音干扰分析者判断，进一步提升逆向难度。</div>
+    </div>
+  </div>
+</section>
+
+<section class="languages-section">
+  <div class="languages-inner">
+    <div class="section-label">SUPPORTED LANGUAGES</div>
+    <h2 class="section-title">多语言支持</h2>
+    <p class="section-desc">覆盖主流后端与前端语言，一套平台满足所有加固需求。</p>
+
+    <div class="lang-grid">
+      <div class="lang-card">
+        <div class="lang-logo">🐘</div>
+        <div class="lang-name">PHP</div>
+        <div class="lang-desc">变量/函数混淆 + 字符串加密 + 反XDebug</div>
+      </div>
+      <div class="lang-card">
+        <div class="lang-logo">☕</div>
+        <div class="lang-name">Java</div>
+        <div class="lang-desc">类名/方法名混淆 + 字符串加密 + 资源保护</div>
+      </div>
+      <div class="lang-card">
+        <div class="lang-logo">⚡</div>
+        <div class="lang-name">JavaScript</div>
+        <div class="lang-desc">字符串数组化 + 控制流平坦化 + 反调试</div>
+      </div>
+      <div class="lang-card">
+        <div class="lang-logo">🐍</div>
+        <div class="lang-name">Python</div>
+        <div class="lang-desc">变量/函数混淆 + 字符串编码 + 反调试检测</div>
+      </div>
+      <div class="lang-card">
+        <div class="lang-logo">⚙️</div>
+        <div class="lang-name">C / C++</div>
+        <div class="lang-desc">宏混淆 + 字符串加密 + 内联控制 + 垃圾代码</div>
+      </div>
+      <div class="lang-card">
+        <div class="lang-logo">🌙</div>
+        <div class="lang-name">Lua</div>
+        <div class="lang-desc">变量混淆 + 字符串加密 + 控制流变换</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing-section">
+  <div class="pricing-inner">
+    <div class="pricing-header">
+      <div class="section-label">PRICING</div>
+      <h2 class="section-title">选择适合你的方案</h2>
+      <p class="section-desc" style="margin: 0 auto;">从免费版到企业版，灵活的定价满足不同规模需求。</p>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="plan-name">免费版</div>
+        <div class="plan-price">¥0<span>/月</span></div>
+        <div class="plan-desc">适合个人体验</div>
+        <ul class="plan-features">
+          <li>每日 3 次加固</li>
+          <li>最大文件 1MB</li>
+          <li>5 种语言支持</li>
+          <li>基础混淆级别</li>
+        </ul>
+        <button class="plan-btn">免费使用</button>
+      </div>
+
+      <div class="price-card featured">
+        <div class="price-badge">最受欢迎</div>
+        <div class="plan-name">专业版</div>
+        <div class="plan-price">¥99<span>/月</span></div>
+        <div class="plan-desc">适合专业开发者</div>
+        <ul class="plan-features">
+          <li>每日 500 次加固</li>
+          <li>最大文件 10MB</li>
+          <li>全部语言支持</li>
+          <li>高级混淆级别</li>
+          <li>控制流平坦化</li>
+          <li>API 接入支持</li>
+        </ul>
+        <button class="plan-btn">立即订阅</button>
+      </div>
+
+      <div class="price-card">
+        <div class="plan-name">基础版</div>
+        <div class="plan-price">¥29<span>/月</span></div>
+        <div class="plan-desc">适合小型项目</div>
+        <ul class="plan-features">
+          <li>每日 50 次加固</li>
+          <li>最大文件 5MB</li>
+          <li>5 种语言支持</li>
+          <li>中级混淆级别</li>
+        </ul>
+        <button class="plan-btn">立即订阅</button>
+      </div>
+
+      <div class="price-card">
+        <div class="plan-name">企业版</div>
+        <div class="plan-price">¥299<span>/月</span></div>
+        <div class="plan-desc">适合团队与企业</div>
+        <ul class="plan-features">
+          <li>不限次数加固</li>
+          <li>最大文件 10MB</li>
+          <li>全部语言支持</li>
+          <li>最高混淆级别</li>
+          <li>私有化部署</li>
+          <li>专属技术支持</li>
+        </ul>
+        <button class="plan-btn">联系销售</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-links">
+    <a href="#demo">在线体验</a>
+    <a href="#features">功能特性</a>
+    <a href="#">开发文档</a>
+    <a href="#">API 参考</a>
+    <a href="#">关于我们</a>
+  </div>
+  <p>© 2026 代码加固平台 Code Hardening Platform · 保留所有权利</p>
+</footer>
+
+<script>
+const sampleCodes = {
+  javascript: `// 用户登录验证模块
+function authenticateUser(username, password) {
+    const MAX_ATTEMPTS = 5;
+    const LOCKOUT_TIME = 30 * 60 * 1000; // 30分钟锁定
+
+    // 检查账户是否被锁定
+    const lockoutKey = 'lockout_' + username;
+    const lockoutEnd = localStorage.getItem(lockoutKey);
+    if (lockoutEnd && Date.now() < parseInt(lockoutEnd)) {
+        console.log('账户已锁定，请稍后再试');
+        return { success: false, message: '账户已锁定' };
+    }
+
+    // 验证密码格式
+    if (password.length < 8) {
+        console.warn('密码长度不足');
+        return { success: false, message: '密码至少8位' };
+    }
+
+    // 模拟数据库查询
+    const users = JSON.parse(localStorage.getItem('users') || '{}');
+    const user = users[username];
+
+    if (!user) {
+        console.log('用户不存在: ' + username);
+        return { success: false, message: '用户名或密码错误' };
+    }
+
+    // 密码哈希验证
+    const hashedPassword = btoa(password + user.salt);
+    if (hashedPassword !== user.passwordHash) {
+        const attempts = parseInt(localStorage.getItem('attempts_' + username) || '0') + 1;
+        localStorage.setItem('attempts_' + username, attempts);
+
+        if (attempts >= MAX_ATTEMPTS) {
+            localStorage.setItem(lockoutKey, Date.now() + LOCKOUT_TIME);
+            console.log('账户已被锁定');
+        }
+
+        return { success: false, message: '用户名或密码错误' };
+    }
+
+    // 登录成功，生成会话
+    const sessionToken = 'tk_' + Math.random().toString(36).substr(2);
+    localStorage.setItem('session_' + sessionToken, JSON.stringify({
+        username: username,
+        role: user.role,
+        loginTime: Date.now()
+    }));
+
+    console.log('用户登录成功: ' + username);
+    return {
+        success: true,
+        token: sessionToken,
+        user: { username: username, role: user.role }
+    };
+}`,
+
+  python: `# 用户认证模块
+import hashlib
+import time
+import json
+import os
+
+class AuthManager:
+    """用户认证管理器，处理登录、注册与会话管理"""
+
+    MAX_LOGIN_ATTEMPTS = 5
+    LOCKOUT_DURATION = 1800  # 30分钟锁定
+    SESSION_EXPIRY = 86400   # 24小时会话过期
+
+    def __init__(self, db_path='users.db'):
+        self.db_path = db_path
+        self._load_users()
+
+    def _load_users(self):
+        """从数据库文件加载用户数据"""
+        if os.path.exists(self.db_path):
+            with open(self.db_path, 'r') as f:
+                self.users = json.load(f)
+        else:
+            self.users = {}
+            self._save_users()
+
+    def _save_users(self):
+        """保存用户数据到文件"""
+        with open(self.db_path, 'w') as f:
+            json.dump(self.users, f, indent=2)
+
+    def _hash_password(self, password, salt):
+        """使用SHA-256哈希密码"""
+        hashed = hashlib.sha256((password + salt).encode()).hexdigest()
+        return hashed
+
+    def register(self, username, password, role='user'):
+        """注册新用户"""
+        if username in self.users:
+            return {'success': False, 'message': '用户名已存在'}
+
+        if len(password) < 8:
+            return {'success': False, 'message': '密码至少8位'}
+
+        salt = os.urandom(16).hex()
+        password_hash = self._hash_password(password, salt)
+
+        self.users[username] = {
+            'password_hash': password_hash,
+            'salt': salt,
+            'role': role,
+            'created_at': time.time(),
+            'login_attempts': 0,
+            'lockout_until': 0
+        }
+        self._save_users()
+        print('用户注册成功: ' + username)
+        return {'success': True, 'message': '注册成功'}
+
+    def login(self, username, password):
+        """验证用户登录"""
+        if username not in self.users:
+            return {'success': False, 'message': '用户名或密码错误'}
+
+        user = self.users[username]
+
+        # 检查账户锁定
+        if user['lockout_until'] > time.time():
+            return {'success': False, 'message': '账户已锁定，请稍后再试'}
+
+        # 验证密码
+        password_hash = self._hash_password(password, user['salt'])
+        if password_hash != user['password_hash']:
+            user['login_attempts'] += 1
+            if user['login_attempts'] >= self.MAX_LOGIN_ATTEMPTS:
+                user['lockout_until'] = time.time() + self.LOCKOUT_DURATION
+                print('账户已锁定: ' + username)
+            self._save_users()
+            return {'success': False, 'message': '用户名或密码错误'}
+
+        # 登录成功，重置失败次数
+        user['login_attempts'] = 0
+        self._save_users()
+
+        session_token = 'sess_' + hashlib.md5(str(time.time()).encode()).hexdigest()
+        print('用户登录成功: ' + username)
+        return {
+            'success': True,
+            'token': session_token,
+            'user': {'username': username, 'role': user['role']}
+        }`,
+
+  php: `<?php
+/**
+ * 用户认证类
+ * 处理登录、注册、会话管理
+ */
+class AuthManager {
+    const MAX_LOGIN_ATTEMPTS = 5;
+    const LOCKOUT_DURATION = 1800; // 30分钟
+    const SESSION_EXPIRY = 86400;  // 24小时
+
+    private $pdo;
+    private $users = [];
+
+    /**
+     * 构造函数，初始化数据库连接
+     */
+    public function __construct($dbPath = 'sqlite::memory:') {
+        try {
+            $this->pdo = new PDO($dbPath);
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->initTables();
+        } catch (PDOException $e) {
+            error_log('数据库连接失败: ' . $e->getMessage());
+            throw new Exception('数据库连接失败');
+        }
+    }
+
+    /**
+     * 初始化数据表
+     */
+    private function initTables() {
+        $sql = "CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            salt VARCHAR(64) NOT NULL,
+            role VARCHAR(20) DEFAULT 'user',
+            login_attempts INTEGER DEFAULT 0,
+            lockout_until INTEGER DEFAULT 0,
+            created_at INTEGER DEFAULT 0
+        )";
+        $this->pdo->exec($sql);
+        echo "数据表初始化完成\n";
+    }
+
+    /**
+     * 注册新用户
+     */
+    public function register($username, $password, $role = 'user') {
+        if (strlen($password) < 8) {
+            return ['success' => false, 'message' => '密码至少8位'];
+        }
+
+        $salt = bin2hex(random_bytes(16));
+        $passwordHash = password_hash($password . $salt, PASSWORD_DEFAULT);
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "INSERT INTO users (username, password_hash, salt, role, created_at) 
+                 VALUES (?, ?, ?, ?, ?)"
+            );
+            $stmt->execute([$username, $passwordHash, $salt, $role, time()]);
+            echo "用户注册成功: {$username}\n";
+            return ['success' => true, 'message' => '注册成功'];
+        } catch (PDOException $e) {
+            return ['success' => false, 'message' => '用户名已存在'];
+        }
+    }
+
+    /**
+     * 用户登录验证
+     */
+    public function login($username, $password) {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            return ['success' => false, 'message' => '用户名或密码错误'];
+        }
+
+        // 检查锁定
+        if ($user['lockout_until'] > time()) {
+            return ['success' => false, 'message' => '账户已锁定'];
+        }
+
+        // 验证密码
+        if (!password_verify($password . $user['salt'], $user['password_hash'])) {
+            $attempts = $user['login_attempts'] + 1;
+            $lockout = $attempts >= self::MAX_LOGIN_ATTEMPTS ? time() + self::LOCKOUT_DURATION : 0;
+
+            $updateStmt = $this->pdo->prepare(
+                "UPDATE users SET login_attempts = ?, lockout_until = ? WHERE id = ?"
+            );
+            $updateStmt->execute([$attempts, $lockout, $user['id']]);
+
+            return ['success' => false, 'message' => '用户名或密码错误'];
+        }
+
+        // 登录成功
+        $updateStmt = $this->pdo->prepare(
+            "UPDATE users SET login_attempts = 0 WHERE id = ?"
+        );
+        $updateStmt->execute([$user['id']]);
+
+        $token = bin2hex(random_bytes(32));
+        echo "用户登录成功: {$username}\n";
+
+        return [
+            'success' => true,
+            'token' => $token,
+            'user' => [
+                'id' => $user['id'],
+                'username' => $user['username'],
+                'role' => $user['role']
+            ]
+        ];
+    }
+}
+?>`,
+
+  java: `import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Base64;
+
+/**
+ * 用户认证服务
+ * 处理用户登录、注册、会话管理等功能
+ * 支持密码哈希、账户锁定、会话过期等安全特性
+ */
+public class AuthService {
+
+    private static final int MAX_LOGIN_ATTEMPTS = 5;
+    private static final long LOCKOUT_DURATION = 1800000L; // 30分钟
+    private static final long SESSION_EXPIRY = 86400000L;  // 24小时
+
+    private Map<String, User> users = new HashMap<>();
+    private Map<String, Session> sessions = new HashMap<>();
+    private SecureRandom random = new SecureRandom();
+
+    /**
+     * 用户内部数据类
+     */
+    private static class User {
+        String username;
+        String passwordHash;
+        String salt;
+        String role;
+        int loginAttempts;
+        long lockoutUntil;
+        long createdAt;
+
+        User(String username, String passwordHash, String salt, String role) {
+            this.username = username;
+            this.passwordHash = passwordHash;
+            this.salt = salt;
+            this.role = role;
+            this.loginAttempts = 0;
+            this.lockoutUntil = 0;
+            this.createdAt = System.currentTimeMillis();
+        }
+    }
+
+    /**
+     * 会话数据类
+     */
+    private static class Session {
+        String token;
+        String username;
+        String role;
+        long createdAt;
+
+        Session(String token, String username, String role) {
+            this.token = token;
+            this.username = username;
+            this.role = role;
+            this.createdAt = System.currentTimeMillis();
+        }
+
+        boolean isExpired() {
+            return System.currentTimeMillis() - createdAt > SESSION_EXPIRY;
+        }
+    }
+
+    /**
+     * 注册新用户
+     * @param username 用户名
+     * @param password 密码
+     * @param role 用户角色
+     * @return 注册结果
+     */
+    public AuthResult register(String username, String password, String role) {
+        if (users.containsKey(username)) {
+            System.out.println("注册失败: 用户名已存在 - " + username);
+            return new AuthResult(false, "用户名已存在");
+        }
+
+        if (password.length() < 8) {
+            return new AuthResult(false, "密码至少8位");
+        }
+
+        String salt = generateSalt();
+        String passwordHash = hashPassword(password, salt);
+
+        users.put(username, new User(username, passwordHash, salt, role));
+        System.out.println("用户注册成功: " + username);
+        return new AuthResult(true, "注册成功");
+    }
+
+    /**
+     * 用户登录验证
+     * @param username 用户名
+     * @param password 密码
+     * @return 登录结果，包含token和用户信息
+     */
+    public AuthResult login(String username, String password) {
+        User user = users.get(username);
+        if (user == null) {
+            System.out.println("登录失败: 用户不存在 - " + username);
+            return new AuthResult(false, "用户名或密码错误");
+        }
+
+        // 检查账户锁定
+        if (user.lockoutUntil > System.currentTimeMillis()) {
+            long remaining = (user.lockoutUntil - System.currentTimeMillis()) / 1000;
+            System.out.println("账户已锁定: " + username + ", 剩余 " + remaining + "秒");
+            return new AuthResult(false, "账户已锁定，请稍后再试");
+        }
+
+        // 验证密码
+        String inputHash = hashPassword(password, user.salt);
+        if (!inputHash.equals(user.passwordHash)) {
+            user.loginAttempts++;
+            if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+                user.lockoutUntil = System.currentTimeMillis() + LOCKOUT_DURATION;
+                System.out.println("账户已锁定: " + username);
+            }
+            return new AuthResult(false, "用户名或密码错误");
+        }
+
+        // 登录成功
+        user.loginAttempts = 0;
+        String token = generateSessionToken();
+        sessions.put(token, new Session(token, username, user.role));
+
+        System.out.println("用户登录成功: " + username);
+        return new AuthResult(true, token, username, user.role);
+    }
+
+    /**
+     * 使用SHA-256哈希密码
+     */
+    private String hashPassword(String password, String salt) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            String input = password + salt;
+            byte[] hash = md.digest(input.getBytes());
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256算法不可用", e);
+        }
+    }
+
+    /**
+     * 生成随机盐值
+     */
+    private String generateSalt() {
+        byte[] salt = new byte[16];
+        random.nextBytes(salt);
+        return Base64.getEncoder().encodeToString(salt);
+    }
+
+    /**
+     * 生成会话令牌
+     */
+    private String generateSessionToken() {
+        byte[] token = new byte[32];
+        random.nextBytes(token);
+        return "sess_" + Base64.getUrlEncoder().withoutPadding().encodeToString(token);
+    }
+}`,
+
+  cpp: `#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <chrono>
+#include <random>
+#include <sstream>
+#include <iomanip>
+#include <openssl/sha.h>
+#include <openssl/rand.h>
+
+/**
+ * 用户认证管理器
+ * 提供用户注册、登录验证、会话管理功能
+ * 支持密码哈希、账户锁定、反暴力破解
+ */
+class AuthManager {
+public:
+    static const int MAX_LOGIN_ATTEMPTS = 5;
+    static const int LOCKOUT_DURATION = 1800; // 30分钟锁定
+    static const int SESSION_EXPIRY = 86400;  // 24小时会话
+
+    struct User {
+        std::string username;
+        std::string passwordHash;
+        std::string salt;
+        std::string role;
+        int loginAttempts;
+        time_t lockoutUntil;
+        time_t createdAt;
+    };
+
+    struct Session {
+        std::string token;
+        std::string username;
+        std::string role;
+        time_t createdAt;
+    };
+
+    struct AuthResult {
+        bool success;
+        std::string message;
+        std::string token;
+        std::string username;
+        std::string role;
+    };
+
+private:
+    std::unordered_map<std::string, User> users;
+    std::unordered_map<std::string, Session> sessions;
+    std::mt19937 rng;
+
+public:
+    AuthManager() {
+        std::random_device rd;
+        rng.seed(rd());
+        std::cout << "[AuthManager] 初始化完成" << std::endl;
+    }
+
+    /**
+     * 注册新用户
+     * @param username 用户名
+     * @param password 密码明文
+     * @param role 用户角色
+     * @return 注册结果
+     */
+    AuthResult registerUser(const std::string& username,
+                            const std::string& password,
+                            const std::string& role = "user") {
+        AuthResult result{false, "", "", "", ""};
+
+        // 检查用户名是否已存在
+        if (users.find(username) != users.end()) {
+            result.message = "用户名已存在";
+            std::cout << "[Register] 失败: 用户名已存在 - " << username << std::endl;
+            return result;
+        }
+
+        // 密码强度检查
+        if (password.length() < 8) {
+            result.message = "密码至少8位";
+            return result;
+        }
+
+        // 生成盐值并哈希密码
+        std::string salt = generateSalt();
+        std::string passwordHash = hashPassword(password, salt);
+
+        User user;
+        user.username = username;
+        user.passwordHash = passwordHash;
+        user.salt = salt;
+        user.role = role;
+        user.loginAttempts = 0;
+        user.lockoutUntil = 0;
+        user.createdAt = std::time(nullptr);
+
+        users[username] = user;
+        result.success = true;
+        result.message = "注册成功";
+        std::cout << "[Register] 用户注册成功: " << username << std::endl;
+        return result;
+    }
+
+    /**
+     * 用户登录
+     * @param username 用户名
+     * @param password 密码
+     * @return 登录结果
+     */
+    AuthResult login(const std::string& username, const std::string& password) {
+        AuthResult result{false, "", "", "", ""};
+
+        auto it = users.find(username);
+        if (it == users.end()) {
+            result.message = "用户名或密码错误";
+            std::cout << "[Login] 失败: 用户不存在 - " << username << std::endl;
+            return result;
+        }
+
+        User& user = it->second;
+        time_t now = std::time(nullptr);
+
+        // 检查账户锁定
+        if (user.lockoutUntil > now) {
+            int remaining = user.lockoutUntil - now;
+            result.message = "账户已锁定，请稍后再试";
+            std::cout << "[Login] 账户已锁定: " << username
+                      << ", 剩余 " << remaining << "秒" << std::endl;
+            return result;
+        }
+
+        // 验证密码
+        std::string inputHash = hashPassword(password, user.salt);
+        if (inputHash != user.passwordHash) {
+            user.loginAttempts++;
+            if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+                user.lockoutUntil = now + LOCKOUT_DURATION;
+                std::cout << "[Login] 账户已锁定: " << username << std::endl;
+            }
+            result.message = "用户名或密码错误";
+            return result;
+        }
+
+        // 登录成功
+        user.loginAttempts = 0;
+        std::string token = generateSessionToken();
+
+        Session session;
+        session.token = token;
+        session.username = username;
+        session.role = user.role;
+        session.createdAt = now;
+        sessions[token] = session;
+
+        result.success = true;
+        result.token = token;
+        result.username = username;
+        result.role = user.role;
+        std::cout << "[Login] 用户登录成功: " << username << std::endl;
+        return result;
+    }
+
+private:
+    /**
+     * 使用SHA-256哈希密码
+     */
+    std::string hashPassword(const std::string& password, const std::string& salt) {
+        std::string input = password + salt;
+        unsigned char hash[SHA256_DIGEST_LENGTH];
+        SHA256(reinterpret_cast<const unsigned char*>(input.c_str()),
+               input.length(), hash);
+
+        std::ostringstream ss;
+        for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+            ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+        }
+        return ss.str();
+    }
+
+    /**
+     * 生成随机盐值
+     */
+    std::string generateSalt() {
+        unsigned char salt[16];
+        RAND_bytes(salt, sizeof(salt));
+        std::ostringstream ss;
+        for (int i = 0; i < 16; i++) {
+            ss << std::hex << std::setw(2) << std::setfill('0') << (int)salt[i];
+        }
+        return ss.str();
+    }
+
+    /**
+     * 生成会话令牌
+     */
+    std::string generateSessionToken() {
+        unsigned char token[32];
+        RAND_bytes(token, sizeof(token));
+        std::ostringstream ss;
+        ss << "sess_";
+        for (int i = 0; i < 32; i++) {
+            ss << std::hex << std::setw(2) << std::setfill('0') << (int)token[i];
+        }
+        return ss.str();
+    }
+};`
+};
+
+let currentLang = 'javascript';
+
+function setLanguage(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.textContent.toLowerCase().includes(lang) ||
+      (lang === 'cpp' && tab.textContent.includes('C++')));
+  });
+  document.getElementById('source-code').innerHTML = highlight(sampleCodes[lang], lang);
+  document.getElementById('source-stats').textContent = sampleCodes[lang].length + ' 字符';
+  harden();
+}
+
+function highlight(code, lang) {
+  let escaped = code
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  if (lang === 'javascript' || lang === 'python' || lang === 'php' || lang === 'java' || lang === 'cpp') {
+    escaped = escaped.replace(/(\/\/[^\n]*)/g, '<span class="cmt">$1</span>');
+    escaped = escaped.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="cmt">$1</span>');
+    if (lang === 'python') {
+      escaped = escaped.replace(/(#[^\n]*)/g, '<span class="cmt">$1</span>');
+    }
+    escaped = escaped.replace(/"([^"\\]|\\.)*"/g, '<span class="str">$&</span>');
+    escaped = escaped.replace(/'([^'\\]|\\.)*'/g, '<span class="str">$&</span>');
+    const kws = getKeywords(lang);
+    kws.forEach(kw => {
+      const re = new RegExp('\\b' + kw + '\\b', 'g');
+      escaped = escaped.replace(re, '<span class="kw">' + kw + '</span>');
+    });
+    escaped = escaped.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+  }
+  return escaped;
+}
+
+function getKeywords(lang) {
+  const keywords = {
+    javascript: ['function', 'const', 'let', 'var', 'return', 'if', 'else', 'for', 'while', 'new', 'class', 'extends', 'this', 'import', 'export', 'default', 'async', 'await', 'try', 'catch', 'throw', 'typeof', 'instanceof', 'true', 'false', 'null', 'undefined'],
+    python: ['def', 'class', 'import', 'from', 'return', 'if', 'elif', 'else', 'for', 'while', 'try', 'except', 'with', 'as', 'pass', 'break', 'continue', 'True', 'False', 'None', 'self', 'in', 'not', 'and', 'or', 'is'],
+    php: ['function', 'class', 'public', 'private', 'protected', 'static', 'return', 'if', 'else', 'elseif', 'for', 'while', 'foreach', 'new', 'try', 'catch', 'throw', 'const', 'define', 'echo', 'print', 'true', 'false', 'null', 'this', 'self', 'array', 'extends', 'implements', 'interface', 'abstract', 'final'],
+    java: ['public', 'private', 'protected', 'class', 'static', 'final', 'void', 'int', 'String', 'boolean', 'long', 'double', 'return', 'if', 'else', 'for', 'while', 'new', 'try', 'catch', 'throw', 'import', 'package', 'this', 'null', 'true', 'false', 'extends', 'implements', 'interface', 'abstract'],
+    cpp: ['int', 'char', 'float', 'double', 'void', 'bool', 'class', 'struct', 'public', 'private', 'protected', 'static', 'const', 'return', 'if', 'else', 'for', 'while', 'new', 'delete', 'this', 'nullptr', 'true', 'false', 'namespace', 'using', 'template', 'typename', 'virtual', 'override', 'auto', 'long', 'short']
+  };
+  return keywords[lang] || [];
+}
+
+function harden() {
+  const code = sampleCodes[currentLang];
+  const obfuscate = document.getElementById('opt-obfuscate').checked;
+  const encrypt = document.getElementById('opt-encrypt').checked;
+  const comments = document.getElementById('opt-comments').checked;
+  const control = document.getElementById('opt-control').checked;
+
+  let result = code;
+  let obfuscationRate = 0;
+  const originalLen = code.length;
+
+  if (comments) {
+    result = removeComments(result, currentLang);
+  }
+
+  if (obfuscate) {
+    result = obfuscateIdentifiers(result, currentLang);
+    obfuscationRate += 30;
+  }
+
+  if (encrypt) {
+    result = encryptStrings(result, currentLang);
+    obfuscationRate += 25;
+  }
+
+  if (control) {
+    result = addControlFlow(result, currentLang);
+    obfuscationRate += 15;
+  }
+
+  const hardenedLen = result.length;
+  const sizeChange = Math.round((hardenedLen - originalLen) / originalLen * 100);
+  obfuscationRate = Math.min(95, obfuscationRate + (sizeChange > 0 ? Math.min(20, sizeChange / 3) : 0));
+
+  document.getElementById('hardened-code').innerHTML = highlight(result, currentLang);
+  document.getElementById('hardened-stats').textContent = '混淆率 ' + Math.round(obfuscationRate) + '% (+' + sizeChange + '%)';
+}
+
+function removeComments(code, lang) {
+  if (lang === 'python') {
+    return code.replace(/#[^\n]*/g, '').replace(/\n{3,}/g, '\n\n');
+  }
+  let result = code.replace(/\/\*[\s\S]*?\*\//g, '');
+  result = result.replace(/^\s*\/\/[^\n]*/gm, '');
+  result = result.replace(/\n{3,}/g, '\n\n');
+  return result;
+}
+
+function obfuscateIdentifiers(code, lang) {
+  const varMap = {};
+  let counter = 0;
+  const prefixes = {
+    javascript: '_0x',
+    python: '_',
+    php: '_',
+    java: 'a',
+    cpp: '_'
+  };
+  const prefix = prefixes[lang] || '_';
+
+  const patterns = {
+    javascript: /\b(function\s+|const\s+|let\s+|var\s+)([a-zA-Z_$][\w$]*)/g,
+    python: /\b(def\s+|class\s+)([a-zA-Z_]\w*)/g,
+    php: /\b(function\s+|class\s+)([a-zA-Z_]\w*)/g,
+    java: /\b(class\s+|void\s+|int\s+|String\s+|boolean\s+)([a-zA-Z_]\w*)/g,
+    cpp: /\b(class\s+|struct\s+|void\s+|int\s+|char\s+|float\s+|double\s+)([a-zA-Z_]\w*)/g
+  };
+
+  const pattern = patterns[lang];
+  if (!pattern) return code;
+
+  let result = code.replace(pattern, (match, keyword, name) => {
+    if (!varMap[name]) {
+      varMap[name] = prefix + counter.toString(36) + Math.random().toString(36).substr(2, 4);
+      counter++;
+    }
+    return keyword + varMap[name];
+  });
+
+  for (const [orig, obf] of Object.entries(varMap)) {
+    const re = new RegExp('\\b' + orig + '\\b', 'g');
+    result = result.replace(re, obf);
+  }
+
+  return result;
+}
+
+function encryptStrings(code, lang) {
+  const prefixes = {
+    javascript: '__dec(',
+    python: '__dec(',
+    php: '__dec(',
+    java: '__dec(',
+    cpp: '__DEC('
+  };
+  const suffixes = {
+    javascript: ')',
+    python: ')',
+    php: ')',
+    java: ')',
+    cpp: ')'
+  };
+  const prefix = prefixes[lang];
+  const suffix = suffixes[lang];
+
+  return code.replace(/"([^"\\]|\\.)*"/g, (match) => {
+    const content = match.slice(1, -1);
+    if (content.length < 3) return match;
+    const encoded = btoa(unescape(encodeURIComponent(content)));
+    return prefix + '"' + encoded + '"' + suffix;
+  });
+}
+
+function addControlFlow(code, lang) {
+  const junkBlocks = {
+    javascript: '\n    const _jx = Math.floor(Math.random() * 9999);\n    if (_jx > 99999) { return null; }\n',
+    python: '\n    _jx = int(__import__("random").random() * 9999)\n    if _jx > 99999:\n        return None\n',
+    php: '\n    $_jx = rand(0, 9999);\n    if ($_jx > 99999) { return null; }\n',
+    java: '\n        int _jx = (int)(Math.random() * 9999);\n        if (_jx > 99999) { return null; }\n',
+    cpp: '\n    int _jx = rand() % 9999;\n    if (_jx > 99999) { return nullptr; }\n'
+  };
+
+  const fnPatterns = {
+    javascript: /(function\s+\w+\s*\([^)]*\)\s*\{)/g,
+    python: /(def\s+\w+\s*\([^)]*\)\s*:)/g,
+    php: /(function\s+\w+\s*\([^)]*\s*\{)/g,
+    java: /((?:public|private|protected)?\s*\w+\s+\w+\s*\([^)]*\)\s*\{)/g,
+    cpp: /(\w+\s+\w+\s*\([^)]*\)\s*\{)/g
+  };
+
+  const pattern = fnPatterns[lang];
+  const junk = junkBlocks[lang];
+  if (!pattern || !junk) return code;
+
+  let count = 0;
+  return code.replace(pattern, (match) => {
+    count++;
+    if (count % 2 === 0) {
+      return match + junk;
+    }
+    return match;
+  });
+}
+
+function scrollToDemo() {
+  document.getElementById('demo').scrollIntoView({ behavior: 'smooth' });
+}
+
+function scrollToFeatures() {
+  document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+}
+
+setLanguage('javascript');
+</script>
+</body>
+</html>
