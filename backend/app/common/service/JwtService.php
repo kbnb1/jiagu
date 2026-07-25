@@ -328,6 +328,50 @@ class JwtService
         return is_array($payload) ? $payload : null;
     }
 
+    /**
+     * 静态方法桥接：创建 access_token。
+     *
+     * @param array $claims
+     * @return string
+     */
+    public static function makeAccessToken(array $claims): string
+    {
+        return (new self())->generateAccessToken($claims);
+    }
+
+    /**
+     * 静态方法桥接：创建 refresh_token。
+     *
+     * @param array $claims
+     * @return string
+     */
+    public static function makeRefreshToken(array $claims): string
+    {
+        return (new self())->generateRefreshToken($claims);
+    }
+
+    /**
+     * 静态方法桥接：解析 token payload（不校验签名）。
+     *
+     * @param string $token
+     * @return array|null
+     */
+    public static function parse(string $token): ?array
+    {
+        return (new self())->decode($token);
+    }
+
+    /**
+     * 静态方法桥接：将 token 加入黑名单。
+     *
+     * @param string $token
+     * @return bool
+     */
+    public static function blacklistToken(string $token): bool
+    {
+        return (new self())->logout($token);
+    }
+
     /* ---------------------------------------------------------------------
      * 内部实现
      * ------------------------------------------------------------------- */

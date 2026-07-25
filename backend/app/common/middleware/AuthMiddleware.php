@@ -71,11 +71,6 @@ class AuthMiddleware
         if ($auth !== '' && preg_match('/^Bearer\s+(.+)$/i', $auth, $m)) {
             return trim($m[1]);
         }
-        // 兼容 query 参数 ?token=xxx
-        $token = $this->readHeader($request, 'X-Token');
-        if ($token !== '') {
-            return trim($token);
-        }
         return '';
     }
 

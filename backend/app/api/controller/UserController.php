@@ -100,7 +100,7 @@ class UserController extends BaseController
         }
 
         $claims = [
-            'uid'      => (int) $user->id,
+            'user_id'  => (int) $user->id,
             'username' => $user->username,
             'is_admin' => (int) $user->is_admin,
         ];
@@ -135,12 +135,11 @@ class UserController extends BaseController
         $uid = $this->userId();
         if ($uid > 0) {
             Cache::delete('jwt:refresh:' . $uid);
-            // 加入黑名单
+            // 加入 JWT 黑名单，确保 token 无法再被使用
             $token = (string) $this->request->header('Authorization', '');
             $token = str_replace('Bearer ', '', $token);
             if ($token !== '' && Config::get('jwt.blacklist_enabled', true)) {
-                $ttl = (int) Config::get('jwt.access_ttl', 604800);
-                Cache::set(Config::get('jwt.blacklist_prefix', 'jwt:blacklist:') . md5($token), 1, $ttl);
+                JwtService::blacklistToken($token);
             }
         }
         return $this->success(null, '已退出登录');
@@ -160,7 +159,7 @@ class UserController extends BaseController
         if (!$payload || ($payload['typ'] ?? '') !== 'refresh') {
             return $this->fail('refresh_token 无效或已过期', 1022);
         }
-        $uid = (int) ($payload['uid'] ?? 0);
+        $uid = (int) ($payload['user_id'] ?? 0);
         if ($uid <= 0) {
             return $this->fail('refresh_token 无效', 1022);
         }
@@ -174,8 +173,11 @@ class UserController extends BaseController
             return $this->fail('用户不存在或已禁用', 1024);
         }
 
+        // 将旧 refresh_token 加入黑名单，防止重放
+        JwtService::blacklistToken($refreshToken);
+
         $claims = [
-            'uid'      => (int) $user->id,
+            'user_id'  => (int) $user->id,
             'username' => $user->username,
             'is_admin' => (int) $user->is_admin,
         ];
