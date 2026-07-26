@@ -366,13 +366,10 @@ class AdminController extends BaseController
             $this->json(401, '请先登录', null, 401)->send();
             exit;
         }
-        $isAdmin = (int) ($this->request->header('X-Is-Admin') ?? 0);
-        if ($isAdmin !== 1) {
-            $user = User::find($uid);
-            if (!$user || !$user->isAdmin()) {
-                $this->json(403, '无管理员权限', null, 403)->send();
-                exit;
-            }
+        $user = User::find($uid);
+        if (!$user || !$user->isAdmin()) {
+            $this->json(403, '无管理员权限', null, 403)->send();
+            exit;
         }
     }
 
