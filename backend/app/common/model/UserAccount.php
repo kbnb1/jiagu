@@ -67,12 +67,52 @@ class UserAccount extends Model
     }
 
     /**
-     * 增加今日使用量
+     * 增加今日使用量（非原子，已废弃，请使用 tryIncrementUsage）
+     * @deprecated 存在竞态条件，请使用 tryIncrementUsage
      */
     public function incrementUsage(): void
     {
         $this->inc('used_today')->update();
         $this->inc('total_tasks')->update();
+    }
+
+    /**
+     * 原子增加使用量：在检查配额的同时递增，防止竞态条件。
+     *
+     * @return bool true 表示成功，false 表示配额已满
+     */
+    public function tryIncrementUsage(): bool
+    {
+        $today = date('Y-m-d');
+        $lastReset = (string) $this->getData('last_reset_date');
+
+        // 跨天重置逻辑需要在事务外先处理
+        if ($lastReset !== $today) {
+            $this->save([
+                'used_today'      => 0,
+                'last_reset_date' => $today,
+            ]);
+            $this->refresh();
+        }
+
+        // daily_quota = 0 表示无限配额
+        $dailyQuota = (int) $this->getData('daily_quota');
+        if ($dailyQuota === 0) {
+            // 无限配额，直接增加
+            Db::execute(
+                'UPDATE user_accounts SET used_today = used_today + 1, total_tasks = total_tasks + 1 WHERE id = ?',
+                [$this->id]
+            );
+            return true;
+        }
+
+        // 使用原子UPDATE，WHERE条件中包含配额检查
+        $affected = Db::execute(
+            'UPDATE user_accounts SET used_today = used_today + 1, total_tasks = total_tasks + 1 WHERE id = ? AND used_today < ?',
+            [$this->id, $dailyQuota]
+        );
+
+        return $affected > 0;
     }
 
     /**

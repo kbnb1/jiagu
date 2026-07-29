@@ -442,4 +442,46 @@ class JwtService
     {
         return $this->refreshTtl;
     }
+
+    /* ---------------------------------------------------------------------
+     * 静态快捷方法（用于控制器直接调用）
+     * ------------------------------------------------------------------- */
+
+    /** @var JwtService|null 单例实例 */
+    private static ?JwtService $instance = null;
+
+    /**
+     * 获取单例实例。
+     */
+    public static function getInstance(): JwtService
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * 静态快捷：生成 access token。
+     */
+    public static function makeAccessToken(array $claims): string
+    {
+        return self::getInstance()->generateAccessToken($claims);
+    }
+
+    /**
+     * 静态快捷：生成 refresh token。
+     */
+    public static function makeRefreshToken(array $claims): string
+    {
+        return self::getInstance()->generateRefreshToken($claims);
+    }
+
+    /**
+     * 静态快捷：解析 token（不验证签名）。
+     */
+    public static function parse(string $token): ?array
+    {
+        return self::getInstance()->decode($token);
+    }
 }

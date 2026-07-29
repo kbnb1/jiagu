@@ -71,10 +71,6 @@ class TaskController extends BaseController
         if ($account->isPlanExpired()) {
             return $this->fail('套餐已过期,请续费', 2017);
         }
-        $account->resetDailyQuotaIfNeeded();
-        if (!$account->canCreateTask()) {
-            return $this->fail('今日加固次数已达上限(' . $account->daily_quota . ')', 2018);
-        }
 
         // 保存文件
         $saveName = Filesystem::disk('local')->putFile('source', $file);
@@ -82,6 +78,14 @@ class TaskController extends BaseController
 
         Db::startTrans();
         try {
+            // 原子配额检查并递增（防止竞态条件）
+            if (!$account->tryIncrementUsage()) {
+                Db::rollback();
+                // 删除已保存的文件
+                $this->removeFile($sourceFile);
+                return $this->fail('今日加固次数已达上限(' . $account->daily_quota . ')', 2018);
+            }
+
             $task = Task::create([
                 'user_id'     => $uid,
                 'task_no'     => Task::generateTaskNo(),
@@ -95,8 +99,6 @@ class TaskController extends BaseController
                 'file_size'   => $file->getSize(),
                 'duration'    => 0,
             ]);
-            // 增加使用量
-            $account->incrementUsage();
             // 推入队列(此处用缓存模拟队列)
             Cache::store('redis')->push('queue:hardening', json_encode(['task_id' => $task->id]));
             Db::commit();
