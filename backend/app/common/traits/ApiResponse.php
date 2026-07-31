@@ -40,14 +40,14 @@ trait ApiResponse
     }
 
     /**
-     * 从请求头获取当前登录用户ID
+     * 从中间件注入的 request 上下文获取当前登录用户ID。
+     *
+     * 用户ID必须由 AuthMiddleware 从已签名的 JWT claims 中解析后注入，
+     * 严禁读取任何客户端可控的请求头/参数，避免越权访问。
      */
     protected function userId(): int
     {
-        $uid = request()->header('X-User-Id');
-        if (empty($uid)) {
-            $uid = request()->userId ?? 0;
-        }
+        $uid = request()->userId ?? 0;
         return (int) $uid;
     }
 
