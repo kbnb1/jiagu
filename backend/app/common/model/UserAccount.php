@@ -67,7 +67,37 @@ class UserAccount extends Model
     }
 
     /**
+     * 原子性尝试扣减配额（防竞态条件）。
+     *
+     * @return bool true 表示扣减成功，false 表示配额不足
+     */
+    public function tryIncrementUsage(): bool
+    {
+        // 先重置配额（如果跨天）
+        $this->resetDailyQuotaIfNeeded();
+
+        // daily_quota = 0 表示无限
+        $dailyQuota = (int) $this->getData('daily_quota');
+        if ($dailyQuota === 0) {
+            // 无限配额，直接更新计数（不检查上限）
+            $this->inc('used_today')->inc('total_tasks')->update();
+            return true;
+        }
+
+        // 使用数据库行级锁 + 条件更新（原子操作）
+        $affected = Db::table('user_accounts')
+            ->where('id', $this->id)
+            ->where('used_today', '<', $dailyQuota)
+            ->inc('used_today')
+            ->inc('total_tasks')
+            ->update();
+
+        return $affected > 0;
+    }
+
+    /**
      * 增加今日使用量
+     * @deprecated 请使用 tryIncrementUsage() 替代，避免竞态条件
      */
     public function incrementUsage(): void
     {

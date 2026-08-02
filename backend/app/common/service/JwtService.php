@@ -51,6 +51,9 @@ class JwtService
     /** @var bool 是否使用 Redis 存储黑名单 */
     private bool $useRedis = false;
 
+    /** @var JwtService|null 共享实例（用于静态工厂方法） */
+    private static ?JwtService $instance = null;
+
     /**
      * @param array $config 配置：
      *   - secret:      HMAC 密钥（必填，缺省时从环境变量读取）
@@ -76,6 +79,50 @@ class JwtService
             $this->redis = $config['redis'];
             $this->useRedis = true;
         }
+    }
+
+    /**
+     * 获取共享实例（懒加载）。
+     */
+    private static function getInstance(): JwtService
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * 静态工厂方法：生成 access_token。
+     *
+     * @param array $claims 业务 claims
+     * @return string
+     */
+    public static function makeAccessToken(array $claims): string
+    {
+        return self::getInstance()->generateAccessToken($claims);
+    }
+
+    /**
+     * 静态工厂方法：生成 refresh_token。
+     *
+     * @param array $claims 业务 claims
+     * @return string
+     */
+    public static function makeRefreshToken(array $claims): string
+    {
+        return self::getInstance()->generateRefreshToken($claims);
+    }
+
+    /**
+     * 静态解析方法：解析 token（不验证签名）。
+     *
+     * @param string $token
+     * @return array|null
+     */
+    public static function parse(string $token): ?array
+    {
+        return self::getInstance()->decode($token);
     }
 
     /**
