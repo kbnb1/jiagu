@@ -40,14 +40,14 @@ trait ApiResponse
     }
 
     /**
-     * 从请求头获取当前登录用户ID
+     * 从 JWT 中间件注入的请求上下文获取已认证用户 ID。
+     *
+     * 严格以来源 JWT 的 userId 为准，禁止通过 X-User-Id 等请求头覆盖，
+     * 否则持有任意有效 token 的攻击者可凭 X-User-Id 任意冒用其他用户身份。
      */
     protected function userId(): int
     {
-        $uid = request()->header('X-User-Id');
-        if (empty($uid)) {
-            $uid = request()->userId ?? 0;
-        }
+        $uid = request()->userId ?? 0;
         return (int) $uid;
     }
 

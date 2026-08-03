@@ -357,7 +357,11 @@ class AdminController extends BaseController
     }
 
     /**
-     * 校验管理员权限
+     * 校验管理员权限。
+     *
+     * 始终以数据库中 is_admin 字段为唯一判定来源，禁止通过 X-Is-Admin
+     * 等请求头自行声明管理员身份，否则持有任意有效 token 的攻击者可
+     * 直接绕过该检查。
      */
     private function checkAdmin(): void
     {
@@ -366,13 +370,10 @@ class AdminController extends BaseController
             $this->json(401, '请先登录', null, 401)->send();
             exit;
         }
-        $isAdmin = (int) ($this->request->header('X-Is-Admin') ?? 0);
-        if ($isAdmin !== 1) {
-            $user = User::find($uid);
-            if (!$user || !$user->isAdmin()) {
-                $this->json(403, '无管理员权限', null, 403)->send();
-                exit;
-            }
+        $user = User::find($uid);
+        if (!$user || !$user->isAdmin()) {
+            $this->json(403, '无管理员权限', null, 403)->send();
+            exit;
         }
     }
 
