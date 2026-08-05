@@ -75,6 +75,13 @@ public final class AesCipher {
      * @param cipherBase64 {@link #encrypt} 产生的 Base64 密文
      * @param keyBase64    Base64 编码的 32 字节密钥
      * @return 明文；出错返回 null
+     *
+     * 重要：调用方必须检查返回值是否为 null！
+     * 解密失败可能原因：
+     * - 密钥错误或不匹配
+     * - 密文格式错误或数据损坏
+     * - 密文被篡改
+     * - Base64 解码失败
      */
     @Nullable
     public static String decrypt(@NonNull String cipherBase64, @NonNull String keyBase64) {

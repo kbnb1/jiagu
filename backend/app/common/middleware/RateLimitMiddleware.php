@@ -125,6 +125,7 @@ class RateLimitMiddleware
 
     /**
      * 文件计数实现：固定窗口内的时间戳列表。
+     * 使用文件锁防止并发竞态条件。
      */
     protected function allowFile(string $key, int $limit): bool
     {
@@ -132,22 +133,49 @@ class RateLimitMiddleware
         $now = microtime(true);
         $windowStart = $now - self::WINDOW_SECONDS;
 
-        $entries = [];
-        if (file_exists($file)) {
-            $raw = file_get_contents($file);
-            $entries = json_decode($raw, true) ?: [];
-        }
-        // 清理过期时间戳
-        $entries = array_values(array_filter($entries, fn($t) => $t > $windowStart));
-
-        if (count($entries) >= $limit) {
-            file_put_contents($file, json_encode($entries), LOCK_EX);
-            return false;
+        // 使用文件锁防止并发竞态
+        $handle = fopen($file, 'c+');
+        if ($handle === false) {
+            // 无法打开文件，允许请求通过（降级策略）
+            return true;
         }
 
-        $entries[] = $now;
-        file_put_contents($file, json_encode($entries), LOCK_EX);
-        return true;
+        if (!flock($handle, LOCK_EX)) {
+            fclose($handle);
+            // 无法获取锁，允许请求通过（降级策略）
+            return true;
+        }
+
+        try {
+            // 读取现有时间戳
+            $content = stream_get_contents($handle);
+            $entries = [];
+            if ($content !== '' && $content !== false) {
+                $entries = json_decode($content, true) ?: [];
+            }
+
+            // 清理过期时间戳
+            $entries = array_values(array_filter($entries, fn($t) => $t > $windowStart));
+
+            if (count($entries) >= $limit) {
+                // 达到限制，拒绝请求
+                return false;
+            }
+
+            // 添加当前请求时间戳
+            $entries[] = $now;
+
+            // 原子写入：清空文件并写入新内容
+            ftruncate($handle, 0);
+            rewind($handle);
+            fwrite($handle, json_encode($entries));
+            fflush($handle);
+
+            return true;
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
     }
 
     /**

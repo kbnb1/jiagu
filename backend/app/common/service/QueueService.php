@@ -104,10 +104,19 @@ class QueueService
         $statusKey = 'job:' . $jobId;
 
         if ($this->useRedis) {
+            // 使用 Redis 事务保证原子性
             $this->redis->multi();
             $this->redis->rPush($queueKey, $payload);
             $this->redis->set($statusKey, $payload);
-            $this->redis->exec();
+            $result = $this->redis->exec();
+
+            // 验证事务执行结果，防止状态不一致
+            if (!is_array($result) || count($result) !== 2) {
+                throw new RuntimeException('Queue push failed: Redis transaction incomplete');
+            }
+            if ($result[0] === false || $result[1] === false) {
+                throw new RuntimeException('Queue push failed: Redis operation failed');
+            }
         } else {
             // 文件模式：状态文件 + 队列文件追加
             file_put_contents($this->statusDir . '/' . $jobId . '.json', $payload, LOCK_EX);
@@ -137,16 +146,42 @@ class QueueService
             if (!file_exists($file) || filesize($file) === 0) {
                 return null;
             }
-            $content = file_get_contents($file);
-            $lines = explode("\n", trim($content));
-            if (empty($lines[0])) {
+
+            // 使用文件锁防止并发竞态条件
+            $handle = fopen($file, 'c+');
+            if ($handle === false) {
                 return null;
             }
-            $payload = $lines[0];
-            // 重写队列文件，移除已弹出任务
-            array_shift($lines);
-            $remaining = implode("\n", $lines);
-            file_put_contents($file, $remaining === '' ? '' : $remaining . "\n", LOCK_EX);
+
+            if (!flock($handle, LOCK_EX)) {
+                fclose($handle);
+                return null;
+            }
+
+            try {
+                // 清空文件句柄的读取缓冲区
+                $content = stream_get_contents($handle);
+                $lines = explode("\n", trim($content));
+                if (empty($lines[0])) {
+                    return null;
+                }
+
+                $payload = $lines[0];
+                // 重写队列文件，移除已弹出任务
+                array_shift($lines);
+                $remaining = implode("\n", $lines);
+
+                // 原子操作：清空文件并写入新内容
+                ftruncate($handle, 0);
+                rewind($handle);
+                if ($remaining !== '') {
+                    fwrite($handle, $remaining . "\n");
+                }
+                fflush($handle);
+            } finally {
+                flock($handle, LOCK_UN);
+                fclose($handle);
+            }
         }
 
         $job = json_decode($payload, true);

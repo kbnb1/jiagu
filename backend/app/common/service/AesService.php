@@ -35,8 +35,28 @@ class AesService
      */
     public function __construct(array $config = [])
     {
-        $this->masterKey = $config['master_key'] ?? (getenv('AES_MASTER_KEY') ?: 'trae-aes-master-key-2026-change-me');
-        $this->salt      = $config['salt'] ?? (getenv('AES_SALT') ?: 'trae-hardening-salt-v1');
+        $this->masterKey = $config['master_key'] ?? getenv('AES_MASTER_KEY');
+        $this->salt      = $config['salt'] ?? getenv('AES_SALT');
+
+        // 安全检查：生产环境强制要求配置主密钥
+        if (empty($this->masterKey)) {
+            throw new \RuntimeException(
+                'AES_MASTER_KEY environment variable must be configured. ' .
+                'Hardcoded default keys are not allowed in production.'
+            );
+        }
+
+        if (strlen($this->masterKey) < 32) {
+            throw new \RuntimeException(
+                'AES_MASTER_KEY must be at least 32 characters for adequate security. ' .
+                'Current length: ' . strlen($this->masterKey)
+            );
+        }
+
+        // 盐值可选，但强烈推荐配置
+        if (empty($this->salt)) {
+            $this->salt = 'trae-hardening-default-salt';
+        }
     }
 
     /**

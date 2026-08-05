@@ -62,11 +62,26 @@ class JwtService
      */
     public function __construct(array $config = [])
     {
-        $this->secret      = $config['secret'] ?? (getenv('JWT_SECRET') ?: 'trae-jwt-default-secret-change-me-2026');
+        $this->secret      = $config['secret'] ?? getenv('JWT_SECRET');
         $this->issuer      = $config['issuer'] ?? (getenv('APP_NAME') ?: 'trae-hardening-platform');
         $this->accessTtl   = (int)($config['access_ttl'] ?? self::ACCESS_TTL);
         $this->refreshTtl  = (int)($config['refresh_ttl'] ?? self::REFRESH_TTL);
         $this->blacklistDir = $config['blacklist_dir'] ?? (sys_get_temp_dir() . '/trae_jwt_blacklist');
+
+        // 安全检查：生产环境强制要求配置密钥
+        if (empty($this->secret)) {
+            throw new \RuntimeException(
+                'JWT_SECRET environment variable must be configured. ' .
+                'Hardcoded default secrets are not allowed in production.'
+            );
+        }
+
+        if (strlen($this->secret) < 32) {
+            throw new \RuntimeException(
+                'JWT_SECRET must be at least 32 characters for adequate security. ' .
+                'Current length: ' . strlen($this->secret)
+            );
+        }
 
         if (!is_dir($this->blacklistDir)) {
             @mkdir($this->blacklistDir, 0700, true);

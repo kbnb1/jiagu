@@ -54,9 +54,9 @@ public class ApiClient {
         // 2. 业务客户端：挂载 AuthInterceptor
         AuthInterceptor authInterceptor = new AuthInterceptor(tokenManager, refreshApi);
 
+        // 生产环境禁用详细日志，防止 Token 泄露
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-        // 生产环境应改为 Level.NONE，避免 Token 泄露到日志
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+        logging.setLevel(HttpLoggingInterceptor.Level.NONE);
 
         OkHttpClient mainClient = new OkHttpClient.Builder()
                 .connectTimeout(15, TimeUnit.SECONDS)
